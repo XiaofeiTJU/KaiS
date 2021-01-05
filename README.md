@@ -35,6 +35,7 @@ As described in the paper, we use the Alibaba trace as shown below.
 * Trace: You can download the required data from the above Alibaba trace. At the same time, we also provide the data sample in ./data.
 * Parameter setting: Set up in main.py according to your own needs.
 * Run:  ` main.py`
+* Observe: Read and analyze the json files in "\results".
 
 ### Version
 * 0.1 beta
