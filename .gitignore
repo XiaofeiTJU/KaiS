@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 algorithm/.DS_Store
 .DS_Store
+*.xml
