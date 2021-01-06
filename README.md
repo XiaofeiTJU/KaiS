@@ -1,8 +1,8 @@
 # A Simulator Demo to Demonstrate the Scheduling Process of *KaiS*
 
-In order to provide interested readers with an intuitive understanding of the *KaiS* scheduling framework, especially the scheduling algorithms, we have stripped out the code of the cluster system, handcrafted a simple simulated environment (for just indication), exposed a part of data about service requests, and made appropriate adjustments to the proposed algorithms.
+In order to provide interested readers with an intuitive understanding of the *KaiS* scheduling framework, especially the scheduling algorithms, we have extracted  the code of the cluster system, handcrafted a simple simulated environment (for just indication), exposed a part of data about service requests, and made appropriate adjustments to the proposed algorithms.
 Interested readers can thus perceive the details of the implementation of our scheduling algorithms.
-Hope this project can provide a thinking perspective for intelligent cloud-edge cluster scheduling.
+Hope this project can provide or inspire a promising and practical solution for intelligent cloud-edge cluster scheduling.
 
 > Tailored Learning-Based Scheduling of Kubernetes-Oriented Edge-Cloud System, INFOCOM 2021. 
 > Yiwen Han, Shihao Shen, Xiaofei Wang, Shiqiang Wang, Victor C. M. Leung
