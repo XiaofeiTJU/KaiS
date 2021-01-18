@@ -39,14 +39,14 @@ def put_task(task_queue, task):
 def update_task_queue(master, cur_time, master_id):
     # clean task for overtime
     i = 0
-    while len(master.task_queue) != i:
+    while len(master.task_queue) > i:
         if master.task_queue[i][0] == -1:
             i = i + 1
             continue
         if cur_time >= master.task_queue[i][2]:
-            del master.task_queue[i]
             master.undone = master.undone + 1
             master.undone_kind[master.task_queue[i][0]] = master.undone_kind[master.task_queue[i][0]] + 1
+            del master.task_queue[i]
         else:
             i = i + 1
     # get new task

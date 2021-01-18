@@ -129,7 +129,8 @@ class Estimator:
                 self.valid_action_mask[i][j] = 1
         curr_neighbor_mask = deepcopy(self.valid_action_mask)
 
-        self.valid_neighbor_node_id = []
+        self.valid_neighbor_node_id = [[i for i in range(self.action_dim)], [i for i in range(self.action_dim)]]
+
         # compute policy probability.
         action_probs = self.sess.run(self.softmaxprob, {self.policy_state: s,
                                                         self.neighbor_mask: curr_neighbor_mask})

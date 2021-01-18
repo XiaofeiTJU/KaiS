@@ -1,6 +1,7 @@
 import math
 import time
 import json
+import sys
 from algorithm.cMMAC import *
 from algorithm.GPG import *
 from env.platform import *
@@ -53,29 +54,36 @@ def to_grid_rewards(node_reward):
 
 
 def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
-    # Set up according to your own needs
-    vaild_node = int()
-    service_coefficient = []
-    SLOT_TIME = float()
-    MAX_TESK_KIND = int()
-    POD_CPU = float()
-    POD_MEM = float()
-    epsilon = float()
-    gamma = float()
-    learning_rate = float()
-    action_dim = int()
-    state_dim = int()
-    node_input_dim = int()
-    cluster_input_dim = int()
-    hid_dims = []
-    output_dim = int()
-    max_depth = int()
-    entropy_weight_init = int()
-    exec_cap = int()
-    entropy_weight_min = float()
-    entropy_weight_decay = float()
+    ############ Set up according to your own needs  ###########
+    # The parameters here are set only to support the operation of the program, and may not be consistent with the actual system
+    vaild_node = 6 # Number of edge nodes available
+    SLOT_TIME = 0.5 # Time of one slot
+    MAX_TESK_TYPE = 12 # Number of tesk types
+    POD_CPU = 15.0 # CPU resources required for a POD
+    POD_MEM = 1.0 # Memory resources required for a POD
+    service_coefficient = [0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.1, 1.1, 1.2, 1.2, 1.3, 1.3, 1.4, 1.4] # Resource demand coefficients for different types of services
+    # Parameters related to DRL
+    epsilon = 0.5
+    gamma = 0.9
+    learning_rate = 1e-3
+    action_dim = 7
+    state_dim = 88
+    node_input_dim = 24
+    cluster_input_dim = 24
+    hid_dims = [16, 8]
+    output_dim = 8
+    max_depth = 8
+    entropy_weight_init = 1
+    exec_cap = 24
+    entropy_weight_min = 0.0001
+    entropy_weight_decay = 1e-3
+    # Parameters related to GPU
+    worker_num_gpu = 0
+    worker_gpu_fraction = 0.1
+    #####################################################################
     ########### Init ###########
     record = []
+    throughput_list = []
     sum_rewards = []
     achieve_num = []
     achieve_num_sum = []
@@ -99,14 +107,18 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
     all_task1 = get_all_task('./data/Task_1.csv')
     all_task2 = get_all_task('./data/Task_2.csv')
 
+    config = tf.ConfigProto(device_count={'GPU': worker_num_gpu},
+                            gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=worker_gpu_fraction))
+    sess = tf.Session(config=config)
     orchestrate_agent = OrchestrateAgent(sess, node_input_dim, cluster_input_dim, hid_dims, output_dim, max_depth,
                                          range(1, exec_cap + 1))
     exp = {'node_inputs': [], 'cluster_inputs': [], 'reward': [], 'wall_time': [], 'node_act_vec': [],
            'cluster_act_vec': []}
 
+
     for n_iter in np.arange(RUN_TIMES):
         ########### Initialize the setup and repeat the experiment many times ###########
-        deploy_state = []
+
         batch_reward = []
         cur_time = 0
         entropy_weight = entropy_weight_init
@@ -115,25 +127,34 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
         pre_done = [0, 0]
         pre_undone = [0, 0]
         context = [1, 1]
+        ############ Set up according to your own needs  ###########
+        # The parameters here are set only to support the operation of the program, and may not be consistent with the actual system
+        deploy_state = [[0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1],
+                        [0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0], [0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1],
+                        [0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1]]
+
         # Create clusters based on the hardware resources you need
-        node1_1 = Node(float(), float(), [], [])  # (cpu, mem)
-        node_list1 = []
+        node1_1 = Node(100.0, 4.0, [], [])  # (cpu, mem,...)
+        node1_2 = Node(200.0, 6.0, [], [])
+        node1_3 = Node(100.0, 8.0, [], [])
+        node_list1 = [node1_1, node1_2, node1_3]
 
-        node2_1 = Node(float(), float(), [], [])  # (cpu, mem)
-        node_list1 = []
+        node2_1 = Node(200.0, 8.0, [], [])
+        node2_2 = Node(100.0, 2.0, [], [])
+        node2_3 = Node(200.0, 6.0, [], [])
+        node_list2 = [node2_1, node2_2, node2_3]
         # (cpu, mem,..., achieve task num, give up task num)
-        master1 = Master(float(), float(), node_list1, [], all_task1, 0, 0, 0, [0] * MAX_TESK_KIND, [0] * MAX_TESK_KIND)
-        master2 = Master(float(), float(), node_list2, [], all_task2, 0, 0, 0, [0] * MAX_TESK_KIND, [0] * MAX_TESK_KIND)
-
-        cloud = Cloud([], [], float(), float())  # (..., cpu, mem)
-
-        for i in range(MAX_TESK_KIND):
+        master1 = Master(200.0, 8.0, node_list1, [], all_task1, 0, 0, 0, [0] * MAX_TESK_TYPE, [0] * MAX_TESK_TYPE)
+        master2 = Master(200.0, 8.0, node_list2, [], all_task2, 0, 0, 0, [0] * MAX_TESK_TYPE, [0] * MAX_TESK_TYPE)
+        cloud = Cloud([], [], sys.maxsize, sys.maxsize)  # (..., cpu, mem)
+        ################################################################################################
+        for i in range(MAX_TESK_TYPE):
             docker = Docker(POD_MEM * service_coefficient[i], POD_CPU * service_coefficient[i], cur_time, i, [-1])
             cloud.service_list.append(docker)
 
         # Crerate dockers based on deploy_state
         for i in range(vaild_node):
-            for ii in range(MAX_TESK_KIND):
+            for ii in range(MAX_TESK_TYPE):
                 dicision = deploy_state[i][ii]
                 if i < 3 and dicision == 1:
                     j = i
@@ -160,16 +181,16 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
                 undone_tasks = []
                 curr_tasks_in_queue = []
                 # Get task state, include successful, failed, and unresolved
-                for i in range(MAX_TESK_KIND):
+                for i in range(MAX_TESK_TYPE):
                     done_tasks.append(float(master1.done_kind[i] + master2.done_kind[i]))
                     undone_tasks.append(float(master1.undone_kind[i] + master2.undone_kind[i]))
                 for i in range(3):
-                    tmp = [0.0] * MAX_TESK_KIND
+                    tmp = [0.0] * MAX_TESK_TYPE
                     for j in range(len(master1.node_list[i].task_queue)):
                         tmp[master1.node_list[i].task_queue[j][0]] = tmp[master1.node_list[i].task_queue[j][0]] + 1.0
                     curr_tasks_in_queue.append(tmp)
                 for i in range(3):
-                    tmp = [0.0] * MAX_TESK_KIND
+                    tmp = [0.0] * MAX_TESK_TYPE
                     for k in range(len(master2.node_list[i].task_queue)):
                         tmp[master2.node_list[i].task_queue[k][0]] = tmp[master2.node_list[i].task_queue[k][0]] + 1
                     curr_tasks_in_queue.append(tmp)
@@ -185,7 +206,8 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
                         tmp.append(float(deploy_state[i][j]))
                     deploy_state_float.append(tmp)
                     # Make decision of orchestration
-                    change_node, change_service, exp = act_offload_agent(orchestrate_agent, exp, done_tasks,
+
+                change_node, change_service, exp = act_offload_agent(orchestrate_agent, exp, done_tasks,
                                                                          undone_tasks, curr_tasks_in_queue,
                                                                          deploy_state_float)
 
@@ -382,7 +404,7 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
             immediate_reward = calculate_reward(master1, master2, cur_done, cur_undone)
 
             record.append([master1, master2, cur_done, cur_undone, immediate_reward])
-            print('Throughput rate:', float(sum(cur_done)) / (float(sum(cur_done)) + float(sum(cur_undone))))
+
             deploy_reward.append(sum(immediate_reward))
 
             if slot != 0:
@@ -419,7 +441,15 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
 
         sum_rewards.append(float(sum(all_rewards)) / float(len(all_rewards)))
         all_rewards = []
+
+        all_number = sum(achieve_num) + sum(fail_num)
+        throughput_list.append(sum(achieve_num) / float(all_number))
+        print('throughput_list_all =', throughput_list,'\ncurrent_achieve_number =', sum(achieve_num),
+              ', current_fail_number =', sum(fail_num))
         achieve_num = []
+        fail_num = []
+
+
         episode_reward = np.sum(batch_reward[1:])
         episode_rewards.append(episode_reward)
         n_iter_order_response_rate = np.mean(order_response_rates[1:])
@@ -443,13 +473,15 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
     time_str = str(time.time())
     with open("./result/" + time_str + ".json", "w") as f:
         json.dump(record, f)
-    return achieve_num_sum
+    return throughput_list
 
 
 if __name__ == "__main__":
-    # Set up according to your own needs
-    RUN_TIMES = int()
-    TASK_NUM = int()
-    TRAIN_TIMES = int()
-    CHO_CYCLE = int()
+    ############ Set up according to your own needs  ###########
+    # The parameters here are set only to support the operation of the program, and may not be consistent with the actual system
+    RUN_TIMES = 500
+    TASK_NUM = 5000
+    TRAIN_TIMES = 50
+    CHO_CYCLE = 1000
+    ##############################################################
     execution(RUN_TIMES, TASK_NUM, TRAIN_TIMES, CHO_CYCLE)
