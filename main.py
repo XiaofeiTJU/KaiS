@@ -55,13 +55,14 @@ def to_grid_rewards(node_reward):
 
 def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
     ############ Set up according to your own needs  ###########
-    # The parameters here are set only to support the operation of the program, and may not be consistent with the actual system
-    vaild_node = 6 # Number of edge nodes available
-    SLOT_TIME = 0.5 # Time of one slot
-    MAX_TESK_TYPE = 12 # Number of tesk types
-    POD_CPU = 15.0 # CPU resources required for a POD
-    POD_MEM = 1.0 # Memory resources required for a POD
-    service_coefficient = [0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.1, 1.1, 1.2, 1.2, 1.3, 1.3, 1.4, 1.4] # Resource demand coefficients for different types of services
+    # The parameters are set to support the operation of the program, and may not be consistent with the actual system
+    vaild_node = 6  # Number of edge nodes available
+    SLOT_TIME = 0.5  # Time of one slot
+    MAX_TESK_TYPE = 12  # Number of tesk types
+    POD_CPU = 15.0  # CPU resources required for a POD
+    POD_MEM = 1.0  # Memory resources required for a POD
+    # Resource demand coefficients for different types of services
+    service_coefficient = [0.8, 0.8, 0.9, 0.9, 1.0, 1.0, 1.1, 1.1, 1.2, 1.2, 1.3, 1.3, 1.4, 1.4]
     # Parameters related to DRL
     epsilon = 0.5
     gamma = 0.9
@@ -114,7 +115,6 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
                                          range(1, exec_cap + 1))
     exp = {'node_inputs': [], 'cluster_inputs': [], 'reward': [], 'wall_time': [], 'node_act_vec': [],
            'cluster_act_vec': []}
-
 
     for n_iter in np.arange(RUN_TIMES):
         ########### Initialize the setup and repeat the experiment many times ###########
@@ -208,8 +208,8 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
                     # Make decision of orchestration
 
                 change_node, change_service, exp = act_offload_agent(orchestrate_agent, exp, done_tasks,
-                                                                         undone_tasks, curr_tasks_in_queue,
-                                                                         deploy_state_float)
+                                                                     undone_tasks, curr_tasks_in_queue,
+                                                                     deploy_state_float)
 
                 # Execute orchestration
                 for i in range(len(change_node)):
@@ -444,11 +444,10 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
 
         all_number = sum(achieve_num) + sum(fail_num)
         throughput_list.append(sum(achieve_num) / float(all_number))
-        print('throughput_list_all =', throughput_list,'\ncurrent_achieve_number =', sum(achieve_num),
+        print('throughput_list_all =', throughput_list, '\ncurrent_achieve_number =', sum(achieve_num),
               ', current_fail_number =', sum(fail_num))
         achieve_num = []
         fail_num = []
-
 
         episode_reward = np.sum(batch_reward[1:])
         episode_rewards.append(episode_reward)
@@ -478,7 +477,7 @@ def execution(RUN_TIMES, BREAK_POINT, TRAIN_TIMES, CHO_CYCLE):
 
 if __name__ == "__main__":
     ############ Set up according to your own needs  ###########
-    # The parameters here are set only to support the operation of the program, and may not be consistent with the actual system
+    # The parameters are set to support the operation of the program, and may not be consistent with the actual system
     RUN_TIMES = 500
     TASK_NUM = 5000
     TRAIN_TIMES = 50
