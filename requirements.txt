@@ -1,3 +1,0 @@
-numpy=1.18.5
-tensorflow=1.14.0
-matplotlib=3.0.3
